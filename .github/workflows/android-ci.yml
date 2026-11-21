@@ -14,10 +14,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install Android SDK 35
-        run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Verify runner Android SDK
+        run: test -d "$ANDROID_HOME/platforms/android-35" && echo "SDK 35 available"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'

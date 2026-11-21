@@ -1,0 +1,11 @@
+# Android Studio / Gradle
+.gradle/
+.idea/
+local.properties
+build/
+**/build/
+*.iml
+*.apk
+*.aab
+captures/
+.DS_Store

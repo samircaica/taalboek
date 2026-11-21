@@ -27,3 +27,15 @@ Este repositorio incluye scripts Gradle, pero no incluye `gradle-wrapper.jar`. S
 Las frases y fragmentos literarios incluidos son **muestras**. Hay que comprobar los derechos de cada edición o traducción antes de distribuir obras completas.
 
 **Estado:** proyecto fuente inicial sin compilación de Android verificada en este entorno.
+
+## Fase 1 — estabilización
+
+Se mantiene una rama `feature/fase-1-estabilizacion` con pruebas unitarias de navegación, CI y correcciones iniciales. La compilación se ejecuta en GitHub Actions con Java 17, SDK 35 y Gradle 8.11.1.
+
+Para compilar localmente desde la raíz (con Gradle 8.11.1 instalado):
+
+```bash
+gradle :app:assembleDebug :app:testDebugUnitTest
+```
+
+Para ejecutar en Android Studio, usar **Run → app**. La generación del audio IA, la sincronización temporal y el lector EPUB completo permanecen pendientes.

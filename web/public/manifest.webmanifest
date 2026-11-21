@@ -1,0 +1,11 @@
+{
+  "name": "Taalboek — Aprende leyendo",
+  "short_name": "Taalboek",
+  "description": "Lectura de libros y aprendizaje de idiomas",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#182e4f",
+  "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}]
+}

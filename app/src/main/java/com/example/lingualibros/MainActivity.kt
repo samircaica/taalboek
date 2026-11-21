@@ -105,7 +105,7 @@ private fun LinguaLibrosApp(repo: PreferencesRepository) {
                 tab == 2 -> GrammarScreen(preferences, speech)
                 else -> SettingsScreen(preferences,
                     onSave = { scope.launch { repo.save(it) } },
-                    onPreview = { speech.speak(it, preferences) })
+                    onPreview = { text, selection -> speech.speak(text, selection) })
             }
         }
     }
@@ -149,7 +149,7 @@ private fun LibraryScreen(preferences: LearningPreferences, onOpen: (Book) -> Un
 
 @Composable
 private fun ReaderScreen(book: Book, p: LearningPreferences, speech: SpeechService, player: ExoPlayer, onAudio: () -> Unit) {
-    val words = remember(book) { Regex("\\S+").findAll(book.excerpt).map { it.value }.toList() }
+    val words = remember(book) { ReaderNavigation.tokenize(book.excerpt) }
     var selected by remember(book) { mutableIntStateOf(0) }
     var translationOpen by remember { mutableStateOf(false) }
     var playing by remember { mutableStateOf(false) }
@@ -176,12 +176,12 @@ private fun ReaderScreen(book: Book, p: LearningPreferences, speech: SpeechServi
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             IconButton(onClick = {
-                selected = (selected - 1).coerceAtLeast(0)
+                selected = ReaderNavigation.previous(selected, words.size)
                 words.getOrNull(selected)?.let { speech.speak(it, p) }
             }) { Icon(Icons.Default.SkipPrevious, "Palabra anterior") }
             Button(onClick = { speech.speak(book.excerpt, p) }) { Text("Leer con TTS") }
             IconButton(onClick = {
-                selected = (selected + 1).coerceAtMost((words.size - 1).coerceAtLeast(0))
+                selected = ReaderNavigation.next(selected, words.size)
                 words.getOrNull(selected)?.let { speech.speak(it, p) }
             }) { Icon(Icons.Default.SkipNext, "Palabra siguiente") }
         }
@@ -190,14 +190,14 @@ private fun ReaderScreen(book: Book, p: LearningPreferences, speech: SpeechServi
         Text("Audio descargado o importado", fontWeight = FontWeight.Bold)
         OutlinedButton(onClick = onAudio) { Text("Elegir audio del dispositivo") }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            OutlinedButton(onClick = { player.seekTo((player.currentPosition - 30000L).coerceAtLeast(0L)) }) { Text("−30 s") }
+            OutlinedButton(onClick = { player.seekTo(ReaderNavigation.seekBack(player.currentPosition)) }) { Text("−30 s") }
             IconButton(onClick = {
                 if (player.isPlaying) player.pause() else player.play()
                 playing = player.isPlaying
             }) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, "Play / Pause") }
             OutlinedButton(onClick = {
                 val max = if (player.duration > 0) player.duration else Long.MAX_VALUE
-                player.seekTo((player.currentPosition + 30000L).coerceAtMost(max))
+                player.seekTo(ReaderNavigation.seekForward(player.currentPosition, max))
             }) { Text("+30 s") }
         }
         HorizontalDivider()
@@ -268,7 +268,7 @@ private fun GrammarScreen(p: LearningPreferences, speech: SpeechService) {
 }
 
 @Composable
-private fun SettingsScreen(current: LearningPreferences, onSave: (LearningPreferences) -> Unit, onPreview: (String) -> Unit) {
+private fun SettingsScreen(current: LearningPreferences, onSave: (LearningPreferences) -> Unit, onPreview: (String, LearningPreferences) -> Unit) {
     var draft by remember(current) { mutableStateOf(current) }
     var nativeMenu by remember { mutableStateOf(false) }
     var readingMenu by remember { mutableStateOf(false) }
@@ -314,7 +314,14 @@ private fun SettingsScreen(current: LearningPreferences, onSave: (LearningPrefer
         Slider(value = draft.speed, onValueChange = { draft = draft.copy(speed = it) }, valueRange = 0.75f..1.5f)
         Text("Acento actual: ${draft.accent}")
         Text("La elección de voz hombre/mujer se aplicará al backend de IA. El TTS local depende de las voces disponibles en Android.", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-        OutlinedButton(onClick = { onPreview("Hello! Welcome to LinguaLibros.") }) { Text("Probar voz") }
+        OutlinedButton(onClick = { onPreview(when (draft.readingLanguage) {
+            "es" -> "Hola, bienvenido a LinguaLibros."
+            "de" -> "Hallo, willkommen bei LinguaLibros."
+            "nl" -> "Hallo, welkom bij LinguaLibros."
+            "fr" -> "Bonjour, bienvenue sur LinguaLibros."
+            "zh" -> "你好，欢迎使用 LinguaLibros。"
+            else -> "Hello! Welcome to LinguaLibros."
+        }, draft) }) { Text("Probar voz") }
         Button(onClick = { onSave(draft); saved = true }, modifier = Modifier.fillMaxWidth()) { Text("Guardar preferencias") }
         if (saved) Text("Preferencias enviadas para guardar")
     }

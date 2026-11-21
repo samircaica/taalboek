@@ -1,0 +1,31 @@
+name: Android CI
+on:
+  push:
+    branches: [main, feature/fase-1-estabilizacion]
+  pull_request:
+    branches: [main]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify runner Android SDK
+        run: test -d "$ANDROID_HOME/platforms/android-35" && echo "SDK 35 available"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile and test
+        run: gradle --no-daemon --stacktrace :app:assembleDebug :app:testDebugUnitTest
+      - name: Publish debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taalboek-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
